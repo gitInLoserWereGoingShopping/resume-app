@@ -222,8 +222,43 @@ export default function ResumeApp() {
               atsMode ? "text-zinc-700" : "text-white/80 dark:text-slate-300"
             }`}
           >
-            Houston, TX · (980) 333-3936 · palmer.mikepalmer@gmail.com ·
-            linkedin.com/in/get-palmer · jobbascript.com
+            Houston, TX · (980) 333-3936 ·
+            {atsMode ? (
+              "palmer.mikepalmer@gmail.com"
+            ) : (
+              <a
+                href="mailto:palmer.mikepalmer@gmail.com"
+                className="hover:underline"
+              >
+                palmer.mikepalmer@gmail.com
+              </a>
+            )}{" "}
+            ·
+            {atsMode ? (
+              "linkedin.com/in/get-palmer"
+            ) : (
+              <a
+                href="https://linkedin.com/in/get-palmer"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                linkedin.com/in/get-palmer
+              </a>
+            )}{" "}
+            ·
+            {atsMode ? (
+              "jobbascript.com"
+            ) : (
+              <a
+                href="https://jobbascript.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                jobbascript.com
+              </a>
+            )}
           </p>
           {!atsMode && (
             <div
