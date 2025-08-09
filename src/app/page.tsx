@@ -32,13 +32,92 @@ export default function ResumeApp() {
     }
   }, [theme, atsMode]);
 
+  // --- Mobile-safe download + print helpers ---
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    /iPad|iPhone|iPod/i.test(navigator.userAgent);
+
+  function getPlainTextFromNode(node: HTMLElement) {
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone
+      .querySelectorAll('.no-print, [aria-hidden="true"]')
+      .forEach((el) => el.remove());
+    const text = clone.textContent || "";
+    return text
+      .replace(/\s+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  function handleDownloadTxt(ref: React.RefObject<HTMLDivElement>) {
+    if (!ref.current) return;
+    const txt = getPlainTextFromNode(ref.current);
+    if (navigator?.clipboard && !isIOS) {
+      navigator.clipboard.writeText(txt).catch(() => {});
+    }
+    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    if (isIOS) {
+      const w = window.open(url, "_blank");
+      if (!w) location.href = url;
+    } else {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Michael-Palmer-Resume.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function handleDownloadHtml(ref: React.RefObject<HTMLDivElement>) {
+    if (!ref.current) return;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Michael Palmer — Resume</title></head><body>${ref.current.innerHTML}</body></html>`;
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    if (isIOS) {
+      const w = window.open(url, "_blank");
+      if (!w) location.href = url;
+    } else {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Michael-Palmer-Resume.html";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function handlePrint() {
+    // iOS must call window.print() synchronously from a user gesture
+    const isIOS =
+      typeof navigator !== "undefined" &&
+      /iPad|iPhone|iPod/i.test(navigator.userAgent);
+    if (isIOS) {
+      window.print();
+      return;
+    }
+    requestAnimationFrame(() => setTimeout(() => window.print(), 50));
+  }
+
   const chip = (text: string) => (
     <span
-      className={`px-2 py-1 rounded-full text-xs ${
-        atsMode ? "bg-zinc-100 text-zinc-700" : "bg-black/10 dark:bg-white/10"
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition 
+        ${
+          atsMode
+            ? "border-zinc-300 bg-white text-zinc-700"
+            : "border-zinc-200/80 bg-gradient-to-b from-white/80 to-zinc-50/80 text-zinc-700 shadow-sm dark:border-white/10 dark:from-white/10 dark:to-white/5 dark:text-slate-100"
+        } 
+        hover:shadow md:will-change-transform hover:-translate-y-px focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-300 dark:focus:ring-white/30`}
     >
       {text}
+    </span>
+  );
+
+  const Badge: React.FC<{ icon?: React.ReactNode; label: string }> = ({
+    icon,
+    label,
+  }) => (
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-black/10 dark:bg-white/10">
+      {icon} {label}
     </span>
   );
 
@@ -52,15 +131,6 @@ export default function ResumeApp() {
     </h3>
   );
 
-  const Badge: React.FC<{ icon?: React.ReactNode; label: string }> = ({
-    icon,
-    label,
-  }) => (
-    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-black/10 dark:bg-white/10">
-      {icon} {label}
-    </span>
-  );
-
   return (
     <div className={`min-h-screen ${themeClasses} transition-colors`}>
       <style>{`
@@ -72,8 +142,14 @@ export default function ResumeApp() {
           /* Print legibility + pagination */
           .print-friendly { color: #000 !important; background: #fff !important; }
           .avoid-break { break-inside: avoid; page-break-inside: avoid; }
-          .force-break-after { break-after: page; page-break-after: always; }
+          .force-break-before { break-before: page; page-break-before: always; }
           .clean-link { color: #000 !important; text-decoration: none !important; }
+          /* Compact typography to keep to 2 pages */
+          .print-compact { font-size: 12px; line-height: 1.35; }
+          .print-compact .space-y-5 > * + * { margin-top: 10px !important; }
+          .print-compact .space-y-4 > * + * { margin-top: 8px !important; }
+          .print-compact .p-6 { padding: 12px !important; }
+          .print-compact .mt-6 { margin-top: 12px !important; }
         }
       `}</style>
 
@@ -84,12 +160,12 @@ export default function ResumeApp() {
             <Sparkles className="w-5 h-5" />
             <span className="font-medium">Michael Palmer — Resume</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <div className="inline-flex items-center gap-2">
               <Palette className="w-4 h-4" />
               <select
                 aria-label="Theme"
-                className="border rounded-md px-2 py-1 bg-white"
+                className="border rounded-md px-2 py-1 bg-white text-zinc-900 dark:text-zinc-900 shadow-sm ring-1 ring-zinc-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 [color-scheme:light]"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value as any)}
               >
@@ -106,18 +182,31 @@ export default function ResumeApp() {
               />
               <span>ATS Mode</span>
             </label>
-            <Button variant="secondary" onClick={() => window.print()}>
-              <Printer className="w-4 h-4 mr-2" /> Print / PDF
-            </Button>
+            <div className="flex flex-wrap gap-2 ml-auto">
+              <Button type="button" variant="secondary" onClick={handlePrint}>
+                <Printer className="w-4 h-4 mr-2" /> Print / PDF
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => handleDownloadTxt(printRef)}
+              >
+                <FileText className="w-4 h-4 mr-2" /> TXT
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => handleDownloadHtml(printRef)}
+              >
+                <Download className="w-4 h-4 mr-2" /> HTML
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Page */}
-      <main
-        ref={printRef}
-        className="mx-auto max-w-4xl px-6 pb-16 print:pb-0 print-bg print-friendly"
-      >
+      <main ref={printRef} className="$1 print-bg print-friendly print-compact">
         <header className={`pt-10 pb-6 ${atsMode ? "" : ""}`}>
           <h1
             className={`text-3xl font-bold tracking-tight ${
@@ -131,46 +220,14 @@ export default function ResumeApp() {
               atsMode ? "text-zinc-700" : "text-white/80 dark:text-slate-300"
             }`}
           >
-            Houston, TX · (980) 333-3936 ·
-            {atsMode ? (
-              "palmer.mikepalmer@gmail.com"
-            ) : (
-              <a
-                href="mailto:palmer.mikepalmer@gmail.com"
-                className="hover:underline"
-              >
-                palmer.mikepalmer@gmail.com
-              </a>
-            )}{" "}
-            ·
-            {atsMode ? (
-              "linkedin.com/in/get-palmer"
-            ) : (
-              <a
-                href="https://linkedin.com/in/get-palmer"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
-                linkedin.com/in/get-palmer
-              </a>
-            )}{" "}
-            ·
-            {atsMode ? (
-              "jobbascript.com"
-            ) : (
-              <a
-                href="https://jobbascript.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
-                jobbascript.com
-              </a>
-            )}
+            Houston, TX · (980) 333-3936 · palmer.mikepalmer@gmail.com ·
+            linkedin.com/in/get-palmer · jobbascript.com
           </p>
           {!atsMode && (
-            <div className="mt-3 flex flex-wrap gap-2 print:hidden">
+            <div
+              className="mt-3 flex flex-wrap gap-2.5 print:hidden"
+              role="list"
+            >
               {chip("React")}
               {chip("JavaScript / TypeScript")}
               {chip("Data Visualisation")}
@@ -202,7 +259,7 @@ export default function ResumeApp() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           {/* Left column */}
-          <section className="md:col-span-1 force-break-after">
+          <section className="md:col-span-1">
             <SectionTitle label="Core Skills" />
             <ul className="space-y-2 text-sm">
               <li>
@@ -251,9 +308,10 @@ export default function ResumeApp() {
           </section>
 
           {/* Right column */}
-          <section className="md:col-span-2 avoid-break">
+          <section className="md:col-span-2">
+            <div className="force-break-before"></div>
             <SectionTitle label="Experience" />
-            <div className="space-y-5">
+            <div className="space-y-4 avoid-break">
               <div>
                 <div className="flex flex-wrap items-baseline gap-x-3">
                   <h4 className="font-semibold">
