@@ -19,6 +19,41 @@ export default function ResumeApp() {
   const [theme, setTheme] = useState<"classic" | "neon" | "slate">("slate");
   const [atsMode, setAtsMode] = useState(false);
   const printRef = useRef<HTMLDivElement | null>(null);
+  const printingLockRef = useRef(false);
+
+  function handlePrint() {
+    const isiOS =
+      typeof navigator !== "undefined" &&
+      /iPad|iPhone|iPod/i.test(navigator.userAgent);
+    if (isiOS) {
+      const content = printRef.current?.innerHTML || "";
+      const css = `@page{size:A4;margin:14mm}@media print{html,body{background:#fff!important}.print-friendly{color:#000!important;background:#fff!important}.no-print{display:none!important}.avoid-break{break-inside:avoid;page-break-inside:avoid}} body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}`;
+      const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Print — Michael Palmer</title><style>${css}</style></head><body class="print-friendly"><main>${content}</main><script>setTimeout(function(){try{window.print()}catch(e){}},150);</script></body></html>`;
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, "_blank");
+      if (!w) {
+        // Pop-up blocked; navigate current tab as a fallback
+        location.href = url;
+      }
+      // Give iOS time to load before revoking
+      setTimeout(() => URL.revokeObjectURL(url), 15000);
+      return;
+    }
+    requestAnimationFrame(() => setTimeout(() => window.print(), 50));
+  }
+
+  const triggerPrintFromGesture = () => {
+    if (printingLockRef.current) return; // prevent double fire from touch+click
+    printingLockRef.current = true;
+    try {
+      handlePrint(); // calls the iOS-specific logic
+    } finally {
+      setTimeout(() => {
+        printingLockRef.current = false;
+      }, 600);
+    }
+  };
 
   const themeClasses = useMemo(() => {
     if (atsMode) return "bg-white text-zinc-900"; // ATS: keep it simple
@@ -86,16 +121,20 @@ export default function ResumeApp() {
     }
   }
 
-  function handlePrint() {
-    // iOS must call window.print() synchronously from a user gesture
-    const isIOS =
-      typeof navigator !== "undefined" &&
-      /iPad|iPhone|iPod/i.test(navigator.userAgent);
+  function handleDownloadStaticPdf() {
+    const pdfPath = "/Michael-Palmer-Resume.pdf"; // place your file in /public
     if (isIOS) {
-      window.print();
+      // iOS Safari ignores download attr — open in a new tab so user can Share → Save to Files
+      const w = window.open(pdfPath, "_blank");
+      if (!w) location.href = pdfPath;
       return;
     }
-    requestAnimationFrame(() => setTimeout(() => window.print(), 50));
+    const a = document.createElement("a");
+    a.href = pdfPath;
+    a.download = "Michael-Palmer-Resume.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   const chip = (text: string) => (
@@ -185,8 +224,24 @@ export default function ResumeApp() {
               <span>ATS Mode</span>
             </label>
             <div className="flex flex-wrap gap-2 ml-auto">
-              <Button type="button" variant="secondary" onClick={handlePrint}>
-                <Printer className="w-4 h-4 mr-2" /> Print / PDF
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleDownloadStaticPdf}
+                aria-label="Download resume PDF"
+              >
+                <Download className="w-4 h-4 mr-2" /> Save PDF
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="select-none"
+                onClick={triggerPrintFromGesture}
+                onTouchStart={triggerPrintFromGesture}
+                onPointerUp={triggerPrintFromGesture}
+                aria-label="Print or save as PDF"
+              >
+                <Printer className="w-4 h-4 mr-2" /> Print
               </Button>
               <Button
                 type="button"
