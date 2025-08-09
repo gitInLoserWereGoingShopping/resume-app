@@ -18,7 +18,7 @@ import {
 export default function ResumeApp() {
   const [theme, setTheme] = useState<"classic" | "neon" | "slate">("slate");
   const [atsMode, setAtsMode] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement | null>(null);
 
   const themeClasses = useMemo(() => {
     if (atsMode) return "bg-white text-zinc-900"; // ATS: keep it simple
@@ -49,7 +49,7 @@ export default function ResumeApp() {
       .trim();
   }
 
-  function handleDownloadTxt(ref: React.RefObject<HTMLDivElement>) {
+  function handleDownloadTxt(ref: React.RefObject<HTMLDivElement | null>) {
     if (!ref.current) return;
     const txt = getPlainTextFromNode(ref.current);
     if (navigator?.clipboard && !isIOS) {
@@ -69,7 +69,7 @@ export default function ResumeApp() {
     }
   }
 
-  function handleDownloadHtml(ref: React.RefObject<HTMLDivElement>) {
+  function handleDownloadHtml(ref: React.RefObject<HTMLDivElement | null>) {
     if (!ref.current) return;
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Michael Palmer — Resume</title></head><body>${ref.current.innerHTML}</body></html>`;
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
@@ -167,7 +167,9 @@ export default function ResumeApp() {
                 aria-label="Theme"
                 className="border rounded-md px-2 py-1 bg-white text-zinc-900 dark:text-zinc-900 shadow-sm ring-1 ring-zinc-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 [color-scheme:light]"
                 value={theme}
-                onChange={(e) => setTheme(e.target.value as any)}
+                onChange={(e) =>
+                  setTheme(e.target.value as "classic" | "neon" | "slate")
+                }
               >
                 <option value="slate">Oil & Gas Slate</option>
                 <option value="classic">Classic</option>
