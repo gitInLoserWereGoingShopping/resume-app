@@ -10,6 +10,7 @@ import {
   Palette,
   CheckCircle2,
 } from "lucide-react";
+import WigglyRigPro from "../ui/wiggly/WigglyRigPro";
 
 // Fancy, printable React resume with ATS mode and theme toggles.
 // Tailwind classes are used throughout; controls are hidden when printing.
@@ -402,6 +403,7 @@ export default function ResumeApp() {
           {/* Right column */}
           <section className="md:col-span-2">
             <div className="force-break-before"></div>
+
             <SectionTitle label="Experience" />
             <div className="space-y-4 avoid-break">
               <div>
@@ -479,6 +481,13 @@ export default function ResumeApp() {
                 </ul>
               </div>
             </div>
+            <section className="experience-card">
+              <header>
+                <div className="xp-bling">
+                  <WigglyRigPro size={160} droplets={120} />
+                </div>
+              </header>
+            </section>
 
             <SectionTitle label="Selected Projects" />
             <div className="space-y-3">
