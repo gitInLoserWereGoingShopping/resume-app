@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs";
 import React, { useEffect } from "react";
 import WigglyRigPro, { WigglyRigProProps } from "./WigglyRigPro";
 
@@ -48,10 +48,11 @@ const meta: Meta<WigglyRigProProps> = {
         null: "system",
         true: "force reduce",
         false: "force motion",
-      } as any,
+      },
     },
   },
 };
+
 export default meta;
 
 type Story = StoryObj<WigglyRigProProps>;
