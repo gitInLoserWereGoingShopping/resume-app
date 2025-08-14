@@ -139,7 +139,7 @@ export default function WigglyRigPro({
       ].join(" ")}
       style={{ width: size, height: size }}
       onClick={erupt}
-      onMouseOver={erupt}
+      onMouseEnter={erupt}
       onKeyDown={onKeyDown}
       aria-label={ariaLabel}
       title="Click to gush oil"
@@ -216,6 +216,7 @@ export default function WigglyRigPro({
                 "--delay": `${d.delay}ms`,
                 "--sz": `${d.size}px`,
                 "--oil": colorOil,
+                animationDelay: `${Math.random() * 0.5}s, ${d.delay}ms`, // glint delay, launch delay
                 left: `80px`, // nozzle.x
                 top: `18px`, // nozzle.y
               } as React.CSSProperties
