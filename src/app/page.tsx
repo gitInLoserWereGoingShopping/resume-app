@@ -484,7 +484,7 @@ export default function ResumeApp() {
             <section className="experience-card">
               <header>
                 <div className="xp-bling">
-                  <WigglyRigPro size={160} droplets={120} />
+                  <WigglyRigPro size={160} droplets={120} colorOil="#ffd700" />
                 </div>
               </header>
             </section>

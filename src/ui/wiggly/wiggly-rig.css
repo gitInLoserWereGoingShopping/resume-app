@@ -90,8 +90,8 @@
   pointer-events: none;
 }
 
-/* Individual droplet */
-.wr_drop {
+/* previous styling for Individual droplet */
+/* .wr_drop {
   --dx: 0px;
   --dy: -100px;
   --dur: 900ms;
@@ -102,7 +102,8 @@
   position: absolute;
   width: var(--sz);
   height: var(--sz);
-  background: var(--oil);
+  background: linear-gradient(145deg, #ffd700 0%, #ffbf00 40%, #ffec8b 100%);
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
   border-radius: 999px;
   opacity: 0;
   transform: translate(0, 0) scale(1);
@@ -111,6 +112,43 @@
       forwards,
     wr-drop-fade calc(var(--dur) * 0.85) linear var(--delay) forwards;
   will-change: transform, opacity;
+}
+*/
+
+/*Individual droplet */
+/* Gold shimmer gradient with animated highlight */
+.wr_drop {
+  --oil: #ffd700;
+  position: absolute;
+  width: var(--sz, 4px);
+  height: var(--sz, 4px);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    #fff8dc 0%,
+    #ffd700 40%,
+    #ffbf00 70%,
+    #b8860b 100%
+  );
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+  opacity: 0;
+  transform: translate(0, 0) scale(1);
+  animation: wr-drop-launch var(--dur, 900ms) cubic-bezier(0.2, 0.7, 0, 1)
+      var(--delay, 0ms) forwards,
+    wr-drop-fade calc(var(--dur, 900ms) * 0.85) linear var(--delay, 0ms)
+      forwards,
+    wr-drop-glint 1s ease-in-out infinite;
+}
+
+/* Glint highlight sweeps diagonally */
+@keyframes wr-drop-glint {
+  0%,
+  100% {
+    background-position: 30% 30%;
+  }
+  50% {
+    background-position: 70% 70%;
+  }
 }
 
 /* Upward throw (to final dx,dy), with a slight hump mid-flight to hint at arc */
